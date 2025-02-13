@@ -1,0 +1,137 @@
+---
+title: "homework_2"
+author: "Aurna Mukherjee (am96848)"
+date: "2024-01-19"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+[Link to Github](https://github.com/aurnam18/Hw3)
+
+```{r setup, include=FALSE, results='hide'}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(tidyverse)
+library(kableExtra)
+library(mosaic)
+```
+
+# **Problem 1**
+
+```{r echo=FALSE}
+gasprices <- read_csv("gasprices.csv")
+gas_plot <- ggplot(gasprices)
+
+#Part A 
+gas_plot + geom_histogram(aes(x=Price), fill = "purple", binwidth = 0.03) + labs(x="Price", title = "Gas prices faceted by existence of competitors") + facet_wrap(~Competitors)
+#shows that median for gas prices with a competitors is lower than no competitors
+gas_boot <- do(10000)*diffmean(Price ~ Competitors, data=mosaic::resample(gasprices))
+confint(gas_boot, level = 0.95)
+```
+
+The theory is that gas stations charge more if they lack direct competition in sight. Based on the confidence interval calculated, where the lower value is -0.0547, and the higher value is 0.008, we know that there is not statistical evidence of a correlation between gas price and lacking competition. This is because 0 is within the interval. Therefore, this theory is unsupported by the data.
+
+```{r echo=FALSE}
+#Part B
+gas_plot + geom_point(aes(x=Income, y=Price), color = "blue") + labs(x="Median Household Income of Location", y="Gas Price", title = "Association between median household income based on location and corresponding gas prices")
+#need to get confidence interval
+gasprices2 = gasprices %>%
+  mutate(high_income = ifelse(Income >= 70000, yes=TRUE, no=FALSE))
+gas_boot_2 <- do(10000)*diffmean(Price ~ high_income, data=mosaic::resample(gasprices2))
+confint(gas_boot_2, level = 0.95)
+```
+
+The theory is that the richer an area is, the higher the gas prices are. This theory is statistically significant, because the number 0 is not in the 95% confidence interval. The difference of means is somewhere between 0.086 and 0.012, with 95% confidence. Therefore, I conclude that this theory is supported by the data.
+
+```{r echo=FALSE}
+#Part C
+gas_plot + geom_histogram(aes(x=Price), fill = "red", binwidth=0.025) + labs(x="Price", title = "Gas prices faceted by stoplight") + facet_wrap(~Stoplight)
+gas_boot_3 <- do(10000)*diffmean(Price ~ Stoplight, data=mosaic::resample(gasprices))
+confint(gas_boot_3, level = 0.95)
+```
+
+The theory is that gas stations at stoplights charge more. We are 95% confident that the difference of means is between -0.039 and 0.031. Because 0 is in this interval, this is not statistically significant. Therefore, I conclude that the theory is unsupported by the data.
+
+```{r echo=FALSE}
+#Part D
+gas_plot + geom_histogram(aes(x=Price), fill = "pink", binwidth = 0.025) + labs(x="Price", title = "Gas prices faceted by highway") + facet_wrap(~Highway)
+#shows that median for gas prices with a highway is greater than no highway
+gas_boot_4 <- do(10000)*diffmean(Price ~ Highway, data=mosaic::resample(gasprices))
+confint(gas_boot_4, level = 0.95)
+```
+
+The theory is that gas stations with direct highway access cost more. We are 95% confident that the difference of means is somewhere between 0.0816 and 0.0087. Zero is not within this interval, so this theory is statistically significant. I conclude that the theory is supported by the data.
+
+```{r echo=FALSE}
+#Part E
+gasprices = gasprices %>%
+  mutate(IsShell = ifelse(Name == "Shell", yes=TRUE, no=FALSE))
+gas_boot_5 <- do(10000)*diffmean(Price ~ IsShell, data=mosaic::resample(gasprices))
+confint(gas_boot_5, level = 0.95)
+ggplot() + geom_histogram(aes(x = gas_boot_5$diffmean))
+```
+
+We are testing out the theory that Shell charges more than non-Shell brands. We are 95% confident that the difference of means is between -0.0099 and 0.0658. Because 0 is in this interval, which we can also see in the graph of the confidence interval, we can conclude that the result is not statistically significant. Therefore, the data does not support that there is a difference in gas price for Shell and non-Shell brands.
+
+# **Problem 2**
+
+```{r echo=FALSE}
+#Part A
+sclass <- read_csv("sclass.csv")
+filt_1 <- filter(sclass, year=="2011" & trim=="63 AMG") #ask in office hours if I need to filter again for used cars
+filt_1_boot = do(1000)*mean(~mileage, data=mosaic::resample(filt_1))
+confint(filt_1_boot, level = 0.95)
+
+#Part B
+filt_2 <- filter(sclass, year=="2014" & trim=="550")
+filt_2 = filt_2 %>%
+  mutate(IsBlack = ifelse(color != "Black", yes=TRUE, no=FALSE))
+filt_2_boot <- do(1000)*prop(~IsBlack, data=mosaic::resample(filt_2))
+confint(filt_2_boot, level = 0.95)
+```
+
+# **Problem 3**
+
+```{r echo=FALSE}
+nbc_pilotsurvey <- read_csv("nbc_pilotsurvey.csv")
+
+#Part A
+filt_nbc <- filter(nbc_pilotsurvey, Show == "Living with Ed" |
+Show == "My Name is Earl")
+nbc_boot <- do(10000)*diffmean(Q1_Happy ~ Show, data=mosaic::resample(filt_nbc))
+confint(nbc_boot, level = 0.95)
+#No evidence since 0 is in the interval
+```
+
+I am trying to answer the question of whether one show between "Living With Ed" and "My Name Is Earl" consistently leads to a higher mean to the Q1_Happy question. We are 95% confident that the difference in mean happiness is somewhere between -0.398 and 0.103, and since 0 is in this interval, this result is not statistically significant. Therefore, we do not have sufficient evidence that either show leads to a higher happiness rating.
+
+```{r echo=FALSE}
+#Part B
+filt2_nbc <- filter(nbc_pilotsurvey, Show == "The Biggest Loser" | Show == "The Apprentice: Los Angeles")
+nbc2_boot <- do(10000)*diffmean(Q1_Annoyed ~ Show, data=mosaic::resample(filt2_nbc))
+confint(nbc2_boot, level = 0.95)
+#There is evidence since 0 is outside the interval
+```
+
+I am trying to answer the question of whether there is a difference in mean Q1_Annoyed rating for the two selected shows. We are 95% confident that the difference is somewhere between -0.525 and -0.022. Because 0 is outside of this interval, there is statistically significant evidence of a difference in mean annoyed ratings.
+
+```{r echo=FALSE}
+#Part C - figure out how to filter for score higher than 4 within the bootstrap
+filt3_nbc <- filter(nbc_pilotsurvey, Show == "Dancing with the Stars")
+nbc3_boot <- do(10000)*prop(~Q2_Confusing, data=mosaic::resample(filt3_nbc))
+confint(nbc3_boot, level = 0.95)
+```
+
+# **Problem 4**
+
+```{r echo=FALSE}
+ebay <- read_csv("ebay.csv")
+ebay <- ebay |>
+  mutate(rev_ratio = rev_after / rev_before)
+ebay_boot <- do(10000)*diffmean(rev_ratio ~ adwords_pause, data=mosaic::resample(ebay))
+confint(ebay_boot, level = 0.95)
+#ask to know which ones are control etc
+```
+
+The question we are testing is whether the revenue ratio differs for treatment and control groups. We are 95% confident that the difference in means is somewhere between -0.09 and -0.01. Because 0 is not in this interval, we know that the results are statistically significant. Thereby, the data favors the idea that paid search advertising on Google creates extra revenue for EBay.
